@@ -33,6 +33,7 @@ services:
       - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
       - AWS_URI=http://minio:9000
       - MINIO_ALIAS=${MINIO_ALIAS:-minioserver}
+      - UNZIP_DATASET=true
     depends_on:
       - minio
     volumes:
