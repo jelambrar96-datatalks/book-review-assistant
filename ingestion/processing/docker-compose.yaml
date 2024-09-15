@@ -1,0 +1,67 @@
+services:
+
+  minio:
+    image: minio/minio:RELEASE.2024-07-31T05-46-26Z.fips
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
+      - MINIO_DEFAULT_BUCKETS=${AWS_BUCKET_NAME}
+    volumes:
+      - minio_data:/data
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    hostname: minio
+    command: server /data --console-address ":9001"
+
+  uploader:
+    build:
+      context: ../download
+      dockerfile: Dockerfile
+    container_name: uploader
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - AWS_URI=http://minio:9000
+      - MINIO_ALIAS=${MINIO_ALIAS:-minioserver}
+      - UNZIP_DATASET=false
+    depends_on:
+      - minio
+    healthcheck:
+      test: ["CMD", "exit", "0"]
+      interval: 5s
+      retries: 3
+      start_period: 2s
+      timeout: 10s
+    restart: "no"
+
+  processing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: processing
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - MINIO_URL=minio:9000
+      - URL_ELASTICSEARCH=http://elasticsearch:9200
+      - INDEX_NAME=default
+      - SAMPLE=5000
+    depends_on:
+      uploader:
+        condition: service_completed_successfully
+    restart: "no"
+
+volumes:
+  minio_data:
