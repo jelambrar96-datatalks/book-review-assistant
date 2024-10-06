@@ -4,11 +4,13 @@ import hashlib
 
 from io import BytesIO
 
+from tqdm import tqdm
+
 import pandas as pd
 from minio import Minio
 
 from elasticsearch import Elasticsearch
-
+from sentence_transformers import SentenceTransformer
 
 # Leer las variables de entorno
 MINIO_URL = os.getenv('MINIO_URL')
@@ -21,7 +23,10 @@ INDEX_NAME = os.getenv("INDEX_NAME", "default-index-name")
 
 SAMPLE = os.getenv("SAMPLE")
 
-# model = SentenceTransformer("all-mpnet-base-v2")
+model_name, dim_model = "all-mpnet-base-v2", 768
+# model_name, dim_model = 'multi-qa-MiniLM-L6-cos-v1', 384
+model = SentenceTransformer(model_name)
+
 number_of_shards = 1
 number_of_replicas = 0
 
@@ -39,9 +44,15 @@ INDEX_SETTINGS = {
             "authors": {"type": "text"},
             "publisher": {"type": "text"},
             "categories": {"type": "text"},
-            "question": {"type": "text"},
             "review_score": {"type": "float"},
             "document_id": {"type": "keyword"},
+            "document_data": {"type": "text"},
+            "text_vector": {
+                "type": "dense_vector",
+                "dims": dim_model,
+                "index": True,
+                "similarity": "cosine"
+            },
         }
     }
 }
@@ -71,7 +82,7 @@ def load_csv_from_minio(minio_client, bucket_name, file_name):
 
 def generate_document_id(doc):
     combined = json.dumps(doc, sort_keys=True)
-    hash_object = hashlib.md5(combined.encode())
+    hash_object = hashlib.md5(combined.encode(), usedforsecurity=False)
     hash_hex = hash_object.hexdigest()
     return hash_hex
 
@@ -113,10 +124,13 @@ def load_dataset(df: pd.DataFrame):
     es_client.indices.create(index=INDEX_NAME, body=INDEX_SETTINGS)
 
     documents = df.to_dict(orient="records")
-    len_documents = len(documents)
-    for i, document in enumerate(documents):
+    # len_documents = len(documents)
+    for document in tqdm(documents):
         document['document_id'] = generate_document_id(document)
-        print("loading document: ", document['document_id'][:8], f"{i+1} of {len_documents}")
+        # print("loading document: ", document['document_id'][:8], f"{i+1} of {len_documents}")
+        document_data = f"{document['title']}. {document['authors']}. " + document['review_summary']
+        document['document_data'] = document_data
+        document['text_vector'] = model.encode(document_data)
         es_client.index(index=INDEX_NAME, document=document)
     
     # es_client.close()
