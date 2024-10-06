@@ -7,3 +7,4 @@ kaggle
 opendatasets
 sentence-transformers
 minio
+tqdm

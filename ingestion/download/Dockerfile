@@ -12,6 +12,8 @@ ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 ENV MINIO_ENDPOINT=$AWS_URI
 ENV MINIO_ALIAS=$MINIO_ALIAS
 
+ENV UNZIP_DATASET=$UNZIP_DATASET
+
 RUN apt-get update
 RUN apt-get install -y python3 python3-pip awscli curl unzip \
     wget ca-certificates
