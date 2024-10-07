@@ -1,0 +1,108 @@
+services:
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    # networks:
+    #   - es_network
+    ports:
+      - 9200:9200
+      - 9300:9300
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  minio:
+    image: minio/minio:RELEASE.2024-07-31T05-46-26Z.fips
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
+      - MINIO_DEFAULT_BUCKETS=${AWS_BUCKET_NAME}
+    volumes:
+      - minio_data:/data
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - 9000:9000
+      - 9001:9001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    hostname: minio
+    command: server /data --console-address ":9001"
+
+  uploader:
+    build:
+      context: ingestion/download
+      dockerfile: Dockerfile
+    container_name: uploader
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - AWS_URI=http://minio:9000
+      - MINIO_ALIAS=${MINIO_ALIAS:-minioserver}
+    depends_on:
+      - minio
+    healthcheck:
+      test: ["CMD", "exit", "0"]
+      interval: 5s
+      retries: 3
+      start_period: 2s
+      timeout: 10s
+    restart: "no"
+
+  ingest:
+    build:
+      context: ingestion/loading
+      dockerfile: Dockerfile
+    container_name: ingest
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - MINIO_URL=minio:9000
+      - URL_ELASTICSEARCH=http://elasticsearch:9200
+      - INDEX_NAME=default
+    depends_on:
+      uploader:
+        condition: service_completed_successfully
+      elasticsearch:
+        condition: service_healthy
+    restart: "no"
+
+  ollamagemma2b:
+    image: ollama/ollama
+    container_name: ollamagemma2b
+    volumes:
+      - ./ollama/ollama_data:/root/.ollama
+    ports:
+      - 11434:11434
+
+  flask-app:
+    build:
+      context: ./flask
+      dockerfile: Dockerfile
+    ports:
+      - 5000:5000
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - OLLAMA_URI=http://ollamagemma2b:11434/v1/
+      - OLLAMA_KEY=ollama
+      - ELASTICSEARCH_URI=http://elasticsearch:9200
+      - ELASTICSEARCH_INDEX=default
+
+volumes:
+  minio_data:
