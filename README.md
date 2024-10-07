@@ -27,7 +27,7 @@ Large Language Models (LLMs), such as GPT-based models, can play a significant r
 
 ## 2. Description of Solution
 
-![architecture](media/archiecture.drawio.png)
+![architecture](media/Screenshot%20from%202024-10-07%2010-22-12.png)
 
 This architecture aims to address the challenge of personalized book recommendations using a combination of open-source tools and machine learning models. The solution integrates various components that interact to process book review data, store embeddings, and utilize a large language model (LLM) to generate recommendations.
 
