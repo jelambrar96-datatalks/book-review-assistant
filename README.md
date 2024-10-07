@@ -181,6 +181,65 @@ AWS_SECRET_ACCESS_KEY="test_secret_access_key"
 
 _______________________________________________________________________________
 
+## 5. Retrieval
+
+In my RAG (Retrieval-Augmented Generation) project using LLM, I implemented the vector embedding search technique for retrieval. This method converts documents and queries into dense vectors, which are then compared in high-dimensional space to identify the most relevant matches.
+
+The advantages of vector embedding search include:
+
+Semantic Understanding: Unlike keyword-based search, vector embeddings capture the meaning of words, allowing for more accurate retrieval based on context rather than exact matches.
+Efficiency with Large Datasets: Embedding search can handle vast amounts of data efficiently, even in scenarios with millions of documents, through optimized algorithms like FAISS.
+Adaptability: Embeddings can be fine-tuned for specific domains, enhancing the accuracy of search results for particular use cases.
+Scalability: Modern frameworks allow embedding search to scale horizontally, making it suitable for production environments handling large-scale queries.
+Multilingual Capabilities: Embeddings can capture cross-lingual representations, enabling retrieval across different languages without requiring separate models.
+
+
+```python
+from sentence_transformers import SentenceTransformer
+
+
+model_name, __ = "all-mpnet-base-v2", 768
+model = SentenceTransformer(model_name)
+model.encode("hello world").tolist()
+
+search_query = {
+    "knn": {
+        "field": field,
+        "query_vector": vector,
+        "k": 5,
+        "num_candidates": 10000,
+    },
+    "_source": [
+        "title",
+        "review_summary",
+        "review_text",
+        "description",
+        "authors",
+        "publisher",
+        "categories",
+        "review_score",
+        "document_id",
+    ]
+}
+```
+
+_______________________________________________________________________________
+
+## 6. Ingestion
+
+The ingestion process in my project is divided into four containers:
+
+1. The first container downloads the dataset and uploads it to MinIO.
+2. The second container is MinIO, which stores the dataset in its raw form.
+3. A third container runs a Python script to process the data.
+4. The final container uploads the processed data to Elasticsearch.
+
+This entire process is triggered when Docker Compose is executed, automating the data flow from download to processing and storage.
+
+
+_______________________________________________________________________________
+
+
 
 In summary, LLMs help create a personalized, intuitive, and efficient system for book recommendations, enhancing the reader’s experience by providing suggestions that are contextually relevant, insightful, and tailored to individual tastes.
 
