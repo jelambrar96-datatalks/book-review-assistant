@@ -24,6 +24,7 @@ Large Language Models (LLMs), such as GPT-based models, can play a significant r
 
 5. **Engagement and Interaction**: LLMs can simulate conversations with users about their reading preferences. This allows for an interactive experience where users can ask follow-up questions, refine their preferences, and explore different genres or authors dynamically. For example, a reader might ask, “Is this book suitable for young adults?” or “How does this author compare to someone like George Orwell?”
 
+_______________________________________________________________________________
 
 ## 2. Description of Solution
 
@@ -96,4 +97,95 @@ This architecture aims to address the challenge of personalized book recommendat
 6. The recommendation and system performance data are stored in PostgreSQL, and Prefect orchestrates workflow evaluations.
 7. Grafana monitors the system’s RAG process to ensure optimal performance and recommendation accuracy.
 
+_______________________________________________________________________________
+
+## 3. Docker and Docker-compose
+
+For this project, Docker and Docker Compose are used to virtualize the applications involved in the solution architecture. Each component, such as the Flask API, Elasticsearch, PostgreSQL, and Ollama container, is containerized using Docker. Docker Compose is then used to orchestrate and manage multiple containers, ensuring that all services run smoothly together in a consistent environment.
+
+### 3.1. Advantages of Using Docker and Docker Compose
+
+1. **Consistency Across Environments**: Docker ensures that the applications run the same way on any system, whether it’s a developer’s local machine or a cloud server. This reduces the "it works on my machine" problem by bundling dependencies and configurations within containers.
+
+2. **Isolation**: Each component of the system runs in its own container, isolated from the others. This isolation allows you to run different versions of applications or services without conflicts, which is particularly useful when working with complex stacks like Elasticsearch, Flask, and PostgreSQL.
+
+3. **Scalability**: Docker makes it easy to scale individual components. For example, if the Flask API needs more instances to handle higher traffic, Docker Compose can scale it horizontally by spinning up more API containers while keeping the rest of the system intact.
+
+4. **Simplified Management with Docker Compose**: Docker Compose allows for defining and running multi-container Docker applications with a single command. It manages the dependencies, ensures that containers communicate with each other properly, and handles container lifecycles, making deployment and development easier.
+
+5. **Portability**: Since Docker containers encapsulate the application and its environment, they can easily be moved and deployed to different systems, whether on-premises or in the cloud, without requiring reconfiguration.
+
+6. **Resource Efficiency**: Containers use system resources more efficiently compared to traditional virtual machines. They share the host system’s kernel while still isolating applications, which reduces the overhead of running multiple services and speeds up development cycles.
+
+_______________________________________________________________________________
+
+## 4. Reproducitibility
+
+
+### 2.1. Instructions to Start the Project
+
+1. **Clone the Project Repository:**
+   If you haven't already, clone the project repository to your local machine:
+   ```bash
+   git clone https://github.com/jelambrar96-datatalks/book-review-assistant.git
+   cd book-review-assistant
+   ```
+
+2. **Set Up the Environment:**
+   Ensure the `.env` file is in the project root directory. This file contains all the necessary environment variables. If it’s not already created, create it and copy the content provided above into the file.
+
+   This is a example of `.env` file.
+
+```bash
+OLLAMA_KEY="ollama"
+
+OPENAI_API_KEY="your_secret_openai_api_key"
+OPENAI_MODEL="gpt-3.5-turbo"
+
+KAGGLE_USERNAME="your_kaggle_username"
+KAGGLE_KEY="your_kaggle_secret_key"
+
+AWS_BUCKET_NAME="test"
+AWS_ACCESS_KEY_ID="test_aws_access_key"
+AWS_SECRET_ACCESS_KEY="test_secret_access_key"
+```
+
+3. **Build the Docker Images:**
+   Some services require building Docker images from custom Dockerfiles. Use the following command to build those images:
+   ```bash
+   docker-compose build
+   ```
+
+4. **Start the Docker Containers:**
+   To start all the services defined in the `docker-compose.yml` file, run:
+   ```bash
+   docker-compose up -d
+   ```
+   The `-d` flag runs the containers in detached mode, meaning they will run in the background.
+
+5. **Verify All Services Are Running:**
+   Use the following command to list all running containers and verify that everything started correctly:
+   ```bash
+   docker-compose ps
+   ```
+
+6. **Download model on ollama container:**
+    Enter a ollama container, you need to get ollama container id using `docker-compose ps`:
+    ```bash
+    docker exec -it ollama_conainer_id /bin/bash
+    ```
+    download gemma 2b model:
+    ```bash
+    ollama pull gemma:2b
+    ```
+
+_______________________________________________________________________________
+
+
 In summary, LLMs help create a personalized, intuitive, and efficient system for book recommendations, enhancing the reader’s experience by providing suggestions that are contextually relevant, insightful, and tailored to individual tastes.
+
+____
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jelambrar1)
+
+Made with Love ❤️ by [@jelambrar96](https://github.com/jelambrar96)
