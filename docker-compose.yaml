@@ -95,7 +95,7 @@ services:
       context: ./flask
       dockerfile: Dockerfile
     ports:
-      - 5000:5000
+      - 8000:8000
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL}
