@@ -1,0 +1,10 @@
+numpy==1.26.4
+requests
+pyarrow
+pandas
+elasticsearch
+minio
+tqdm
+openai
+python-dotenv
+sentence-transformers
