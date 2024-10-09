@@ -122,7 +122,7 @@ _______________________________________________________________________________
 ## 4. Reproducitibility
 
 
-### 2.1. Instructions to Start the Project
+### 4.1. Instructions to Start the Project
 
 1. **Clone the Project Repository:**
    If you haven't already, clone the project repository to your local machine:
@@ -130,7 +130,7 @@ _______________________________________________________________________________
    git clone https://github.com/jelambrar96-datatalks/book-review-assistant.git
    cd book-review-assistant
    ```
-
+  
 2. **Set Up the Environment:**
    Ensure the `.env` file is in the project root directory. This file contains all the necessary environment variables. If it’s not already created, create it and copy the content provided above into the file.
 
@@ -150,26 +150,39 @@ AWS_ACCESS_KEY_ID="test_aws_access_key"
 AWS_SECRET_ACCESS_KEY="test_secret_access_key"
 ```
 
-3. **Build the Docker Images:**
+3. Create an API key in Kaggle, follow these steps:
+  - **Log into Kaggle**: Visit [https://www.kaggle.com/](https://www.kaggle.com/) and log into your account.
+  - **Go to Your Account**:
+    - Click on your profile icon at the top-right corner of the page.
+    - From the dropdown menu, select **Account**.
+  - **Create API Token**:
+    - Scroll down to the section labeled **API**.
+    - Click the button that says **Create New API Token**.
+    - This will automatically download a file named `kaggle.json` to your computer. This file contains your Kaggle username and API key.
+  - **Store the API Key**:
+    - Keep the `kaggle.json` file secure as it contains your personal credentials.
+    - Take username and key a write on your .env file
+
+4. **Build the Docker Images:**
    Some services require building Docker images from custom Dockerfiles. Use the following command to build those images:
    ```bash
    docker-compose build
    ```
 
-4. **Start the Docker Containers:**
+5. **Start the Docker Containers:**
    To start all the services defined in the `docker-compose.yml` file, run:
    ```bash
    docker-compose up -d
    ```
    The `-d` flag runs the containers in detached mode, meaning they will run in the background.
 
-5. **Verify All Services Are Running:**
+7. **Verify All Services Are Running:**
    Use the following command to list all running containers and verify that everything started correctly:
    ```bash
    docker-compose ps
    ```
 
-6. **Download model on ollama container:**
+8. **Download model on ollama container:**
     Enter a ollama container, you need to get ollama container id using `docker-compose ps`:
     ```bash
     docker exec -it ollama_conainer_id /bin/bash
