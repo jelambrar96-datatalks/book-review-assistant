@@ -1,0 +1,8 @@
+#.gitignore for python and jupyter
+
+.ipynb_checkpoints
+.env
+
+*.csv
+*.gz
+*.bak

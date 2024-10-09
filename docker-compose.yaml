@@ -53,6 +53,7 @@ services:
       - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
       - AWS_URI=http://minio:9000
       - MINIO_ALIAS=${MINIO_ALIAS:-minioserver}
+      - UNZIP_DATASET=true
     depends_on:
       - minio
     healthcheck:
@@ -75,6 +76,7 @@ services:
       - MINIO_URL=minio:9000
       - URL_ELASTICSEARCH=http://elasticsearch:9200
       - INDEX_NAME=default
+      - SAMPLE=${SAMPLE}
     depends_on:
       uploader:
         condition: service_completed_successfully

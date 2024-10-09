@@ -6,6 +6,7 @@ from io import BytesIO
 
 from tqdm import tqdm
 
+import pyarrow
 import pandas as pd
 from minio import Minio
 
@@ -22,6 +23,8 @@ URL_ELASTICSEARCH = os.getenv("URL_ELASTICSEARCH")
 INDEX_NAME = os.getenv("INDEX_NAME", "default-index-name")
 
 SAMPLE = os.getenv("SAMPLE")
+if SAMPLE == "":
+    SAMPLE = None
 
 model_name, dim_model = "all-mpnet-base-v2", 768
 # model_name, dim_model = 'multi-qa-MiniLM-L6-cos-v1', 384
@@ -80,6 +83,64 @@ def load_csv_from_minio(minio_client, bucket_name, file_name):
     return df
 
 
+def send_dataframe_to_minio(
+    df: pd.DataFrame,
+    minio_client: str,
+    bucket_name: str,
+    object_name: str,
+    format_file: str = "csv"):
+    """
+    Save a pandas DataFrame to a MinIO bucket as a CSV file.
+
+    :param df: The pandas DataFrame to save.
+    :param bucket_name: The name of the MinIO bucket where the CSV will be stored.
+    :param object_name: The object name (including path if needed) in the bucket for the CSV file.
+    :param minio_client: An instance of the Minio client.
+    """
+    if format_file == "csv":
+        # Convert DataFrame to CSV and write it to a bytes buffer (in-memory file)
+        csv_buffer = BytesIO()
+        df.to_csv(csv_buffer, index=False)
+        # Move to the beginning of the buffer
+        csv_buffer.seek(0)
+        # Check if bucket exists, create if not
+        if not minio_client.bucket_exists(bucket_name):
+            raise Exception(f"Bucket [{bucket_name}]does not exists")
+        
+        # Upload the CSV file to the specified bucket in MinIO
+        minio_client.put_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            data=csv_buffer,
+            length=csv_buffer.getbuffer().nbytes,
+            content_type='application/csv'
+        )
+        return
+    if format_file == "parquet":
+        # Convert DataFrame to Parquet and write it to a bytes buffer (in-memory file)
+        parquet_buffer = BytesIO()
+        df.to_parquet(parquet_buffer, engine='pyarrow', index=False)
+        
+        # Move to the beginning of the buffer
+        parquet_buffer.seek(0)
+        
+        # Check if bucket exists, create if not
+        if not minio_client.bucket_exists(bucket_name):
+            minio_client.make_bucket(bucket_name)
+        
+        # Upload the Parquet file to the specified bucket in MinIO
+        minio_client.put_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            data=parquet_buffer,
+            length=parquet_buffer.getbuffer().nbytes,
+            content_type='application/octet-stream'
+        )
+        return
+    raise ValueError("Invalid Format")
+    
+
+
 def generate_document_id(doc):
     combined = json.dumps(doc, sort_keys=True)
     hash_object = hashlib.md5(combined.encode(), usedforsecurity=False)
@@ -135,6 +196,7 @@ def load_dataset(df: pd.DataFrame):
     
     # es_client.close()
 
+
 def main():
     # Nombres de los archivos CSV en el bucket
     csv_file_1 = 'raw_dataset/amazon-books-reviews/ratings.csv'
@@ -157,7 +219,9 @@ def main():
     if SAMPLE is not None:
         nsample = int(SAMPLE)
         df = df.sample(nsample, random_state=1)
+    send_dataframe_to_minio(df, minio_client, BUCKET_NAME, "raw_dataset/amazon-books-reviews/sample_dataset.csv", "csv")
     load_dataset(df)
 
 
-main()
+if __name__ == '__main__':
+    main()
